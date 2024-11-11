@@ -4,6 +4,7 @@ import com.navercorp.fixturemonkey.FixtureMonkey;
 import com.navercorp.fixturemonkey.api.generator.ArbitraryContainerInfo;
 import com.navercorp.fixturemonkey.api.introspector.ConstructorPropertiesArbitraryIntrospector;
 import com.navercorp.fixturemonkey.api.introspector.FieldReflectionArbitraryIntrospector;
+import com.navercorp.fixturemonkey.api.plugin.InterfacePlugin;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
@@ -22,16 +23,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class FixtureMonkeyTest {
 
+    private final static InterfacePlugin interfacePlugin = new InterfacePlugin();
+
+    static {
+        interfacePlugin.interfaceImplements(Book.class, List.of(FantasyBook.class));
+        interfacePlugin.abstractClassExtends(EntityAttribute.class, List.of(NumberEntityAttribute.class));
+        interfacePlugin.abstractClassExtends(Condition.class, List.of(ValueCondition.class, ListValueCondition.class));
+        interfacePlugin.abstractClassExtends(Letter.class, List.of(A.class, B.class));
+        interfacePlugin.abstractClassExtends(Value.class, List.of(StringValue.class));
+    }
+
     private final static FixtureMonkey FIXTURE_MONKEY = FixtureMonkey.builder()
             .objectIntrospector(FieldReflectionArbitraryIntrospector.INSTANCE)
             .defaultArbitraryContainerInfoGenerator(context -> new ArbitraryContainerInfo(1, 1))
             .nullableContainer(false)
             .defaultNotNull(true)
             .nullableElement(false)
-            .interfaceImplements(Book.class, List.of(FantasyBook.class))
-            .interfaceImplements(EntityAttribute.class, List.of(NumberEntityAttribute.class))
-            .interfaceImplements(Condition.class, List.of(ValueCondition.class, ListValueCondition.class))
-            .interfaceImplements(Letter.class, List.of(A.class, B.class))
+            .plugin(interfacePlugin)
             .pushAssignableTypeArbitraryIntrospector(Record.class, ConstructorPropertiesArbitraryIntrospector.INSTANCE)
             .pushAssignableTypeArbitraryIntrospector(Timestamp.class, ConstructorPropertiesArbitraryIntrospector.INSTANCE)
             .pushAssignableTypeArbitraryIntrospector(URL.class, ConstructorPropertiesArbitraryIntrospector.INSTANCE)
@@ -158,7 +166,7 @@ class FixtureMonkeyTest {
                 .nullableContainer(false)
                 .defaultNotNull(true)
                 .nullableElement(false)
-                .interfaceImplements(Value.class, List.of(StringValue.class))
+                .plugin(interfacePlugin)
                 .pushAssignableTypeArbitraryIntrospector(Value.class, ConstructorPropertiesArbitraryIntrospector.INSTANCE)
                 .build();
 
