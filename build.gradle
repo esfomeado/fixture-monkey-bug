@@ -34,8 +34,8 @@ dependencies {
     implementation 'org.springframework.data:spring-data-commons'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
-    implementation 'com.navercorp.fixturemonkey:fixture-monkey:1.1.0'
-    implementation 'com.navercorp.fixturemonkey:fixture-monkey-jackson:1.1.0'
+    implementation 'com.navercorp.fixturemonkey:fixture-monkey:1.1.1'
+    implementation 'com.navercorp.fixturemonkey:fixture-monkey-jackson:1.1.1'
 
     implementation 'org.slf4j:slf4j-reload4j:2.0.11'
 

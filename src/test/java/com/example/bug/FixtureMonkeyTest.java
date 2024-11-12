@@ -31,6 +31,8 @@ class FixtureMonkeyTest {
         interfacePlugin.abstractClassExtends(Condition.class, List.of(ValueCondition.class, ListValueCondition.class));
         interfacePlugin.abstractClassExtends(Letter.class, List.of(A.class, B.class));
         interfacePlugin.abstractClassExtends(Value.class, List.of(StringValue.class));
+        interfacePlugin.abstractClassExtends(EvaluationValue.class,
+                List.of(StringEvaluationValue.class, ListEvaluationValue.class, AttributeEvaluationValue.class));
     }
 
     private final static FixtureMonkey FIXTURE_MONKEY = FixtureMonkey.builder()
@@ -109,6 +111,26 @@ class FixtureMonkeyTest {
         assertThat(parentNode).isNotNull();
         assertThat(parentNode.nodes).isNotEmpty();
         assertThat(parentNode.nodes.get(0).nodes).isNotEmpty();
+    }
+
+    @RepeatedTest(100)
+    void evaluationValue() {
+        List<EvaluationValue> stringEvaluationValues =
+                FIXTURE_MONKEY.giveMe(StringEvaluationValue.class, 2)
+                        .stream()
+                        .map(EvaluationValue.class::cast)
+                        .toList();
+
+        EvaluationValue listEvaluationValue = new ListEvaluationValue(
+               stringEvaluationValues
+        );
+
+        AttributeEvaluationValue attributeEvaluationValue = FIXTURE_MONKEY.giveMeBuilder(AttributeEvaluationValue.class)
+                .set("value", listEvaluationValue)
+                .sample();
+
+        assertThat(attributeEvaluationValue).isNotNull();
+        assertThat(attributeEvaluationValue.value()).isEqualTo(listEvaluationValue);
     }
 
     @Test
