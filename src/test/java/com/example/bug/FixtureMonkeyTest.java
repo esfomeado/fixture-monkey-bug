@@ -207,4 +207,12 @@ class FixtureMonkeyTest {
 
         assertThat(alphabet1.getLetters()).singleElement().isExactlyInstanceOf(B.class);
     }
+
+    @Test
+    void proto() {
+        Proto proto = FIXTURE_MONKEY.giveMeOne(Proto.class);
+
+        assertThat(proto).isNotNull();
+        assertThat(proto.event()).isNull();
+    }
 }
