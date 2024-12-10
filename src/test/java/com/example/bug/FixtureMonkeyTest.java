@@ -10,6 +10,7 @@ import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.codec.multipart.FilePart;
 
+import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -30,9 +31,9 @@ class FixtureMonkeyTest {
         interfacePlugin.abstractClassExtends(EntityAttribute.class, List.of(NumberEntityAttribute.class));
         interfacePlugin.abstractClassExtends(Condition.class, List.of(ValueCondition.class, ListValueCondition.class));
         interfacePlugin.abstractClassExtends(Letter.class, List.of(A.class, B.class));
-        interfacePlugin.abstractClassExtends(Value.class, List.of(StringValue.class));
+        interfacePlugin.abstractClassExtends(Value.class, List.of(StringValue.class, ListValue.class));
         interfacePlugin.abstractClassExtends(EvaluationValue.class,
-                List.of(StringEvaluationValue.class, ListEvaluationValue.class, AttributeEvaluationValue.class));
+                List.of(StringEvaluationValue.class, QuestionScoresEvaluationValue.class,  NumberEvaluationValue.class, ListEvaluationValue.class, AttributeEvaluationValue.class));
     }
 
     private final static FixtureMonkey FIXTURE_MONKEY = FixtureMonkey.builder()
@@ -42,6 +43,7 @@ class FixtureMonkeyTest {
             .defaultNotNull(true)
             .nullableElement(false)
             .plugin(interfacePlugin)
+            .useExpressionStrictMode()
             .pushAssignableTypeArbitraryIntrospector(Record.class, ConstructorPropertiesArbitraryIntrospector.INSTANCE)
             .pushAssignableTypeArbitraryIntrospector(Timestamp.class, ConstructorPropertiesArbitraryIntrospector.INSTANCE)
             .pushAssignableTypeArbitraryIntrospector(URL.class, ConstructorPropertiesArbitraryIntrospector.INSTANCE)
@@ -122,7 +124,7 @@ class FixtureMonkeyTest {
                         .toList();
 
         EvaluationValue listEvaluationValue = new ListEvaluationValue(
-               stringEvaluationValues
+                stringEvaluationValues
         );
 
         AttributeEvaluationValue attributeEvaluationValue = FIXTURE_MONKEY.giveMeBuilder(AttributeEvaluationValue.class)
@@ -209,10 +211,18 @@ class FixtureMonkeyTest {
     }
 
     @Test
+    @Disabled
     void proto() {
         Proto proto = FIXTURE_MONKEY.giveMeOne(Proto.class);
 
         assertThat(proto).isNotNull();
         assertThat(proto.event()).isNull();
+    }
+
+    @RepeatedTest(100)
+    void duplicateKey() {
+            EvaluationValue value = FIXTURE_MONKEY.giveMeBuilder(AttributeEvaluationValue.class)
+                .set("value", EvaluationValue.ofQuestion(BigDecimal.ONE))
+                .sample();
     }
 }

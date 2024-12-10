@@ -1,4 +1,6 @@
 package com.example.bug;
 
-public record AttributeEvaluationValue(EvaluationValue value) implements EvaluationValue {
+import java.util.UUID;
+
+public record AttributeEvaluationValue(UUID attributeId, EvaluationValue value) implements EvaluationValue {
 }
