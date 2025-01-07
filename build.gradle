@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '2.7.18'
+    id 'org.springframework.boot' version '3.4.1'
     id 'io.spring.dependency-management' version '1.1.7'
 }
 
@@ -38,24 +38,18 @@ dependencies {
     implementation 'org.springframework.data:spring-data-commons'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
-    implementation 'com.navercorp.fixturemonkey:fixture-monkey:1.1.6'
-    implementation 'com.navercorp.fixturemonkey:fixture-monkey-jackson:1.1.6'
 
-    implementation 'org.slf4j:slf4j-reload4j:2.0.11'
-    implementation 'com.google.protobuf:protobuf-java:4.28.3'
+    implementation 'com.google.protobuf:protobuf-java:4.29.2'
 
     implementation 'org.jooq:jooq'
 
+    testImplementation 'com.navercorp.fixturemonkey:fixture-monkey-starter:1.1.8'
     testImplementation 'org.mockito:mockito-core:5.15.2'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.11.4'
     testImplementation 'org.assertj:assertj-core:3.25.1'
 }
 
-tasks.named('test') {
-    useJUnitPlatform()
-}
-
 test {
-    jvmArgs('--add-opens=java.base/java.lang=ALL-UNNAMED')
+    useJUnitPlatform()
 }

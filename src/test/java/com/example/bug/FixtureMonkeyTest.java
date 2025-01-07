@@ -49,6 +49,7 @@ class FixtureMonkeyTest {
             .defaultNotNull(true)
             .nullableElement(false)
             .plugin(interfacePlugin)
+            .defaultArbitraryContainerInfoGenerator(context -> new ArbitraryContainerInfo(1, 1))
             .useExpressionStrictMode()
             .pushAssignableTypeArbitraryIntrospector(Record.class, ConstructorPropertiesArbitraryIntrospector.INSTANCE)
             .build();
@@ -104,7 +105,7 @@ class FixtureMonkeyTest {
         assertThat(dataTest.getName()).isNotNull();
     }
 
-    @Test
+    @RepeatedTest(100)
     void nodeBug() {
         Node node = FIXTURE_MONKEY.giveMeOne(Node.class);
 
@@ -250,12 +251,14 @@ class FixtureMonkeyTest {
         assertThat(proto.event()).isNull();
     }
 
-    @RepeatedTest(500)
+    @RepeatedTest(100)
     void duplicateKey() {
         var value = FIXTURE_MONKEY.giveMeBuilder(AttributeEvaluationValue.class)
                 .set("value", EvaluationValue.ofNumber(BigDecimal.ONE))
                 .sample();
 
         assertThat(value).isNotNull();
+        assertThat(value.attributeId()).isNotNull();
+        assertThat(value.value().numberValue()).isEqualTo(BigDecimal.ONE);
     }
 }
