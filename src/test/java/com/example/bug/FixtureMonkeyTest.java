@@ -1,8 +1,11 @@
 package com.example.bug;
 
 import com.navercorp.fixturemonkey.FixtureMonkey;
+import com.navercorp.fixturemonkey.api.arbitrary.CombinableArbitrary;
 import com.navercorp.fixturemonkey.api.generator.ArbitraryContainerInfo;
+import com.navercorp.fixturemonkey.api.introspector.ArbitraryIntrospectorResult;
 import com.navercorp.fixturemonkey.api.introspector.ConstructorPropertiesArbitraryIntrospector;
+import com.navercorp.fixturemonkey.api.introspector.FailoverIntrospector;
 import com.navercorp.fixturemonkey.api.introspector.FieldReflectionArbitraryIntrospector;
 import com.navercorp.fixturemonkey.api.plugin.InterfacePlugin;
 import org.junit.jupiter.api.Disabled;
@@ -13,11 +16,7 @@ import org.springframework.http.codec.multipart.FilePart;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,21 +31,26 @@ class FixtureMonkeyTest {
         interfacePlugin.abstractClassExtends(Condition.class, List.of(ValueCondition.class, ListValueCondition.class));
         interfacePlugin.abstractClassExtends(Letter.class, List.of(A.class, B.class));
         interfacePlugin.abstractClassExtends(Value.class, List.of(StringValue.class, ListValue.class));
-        interfacePlugin.abstractClassExtends(EvaluationValue.class,
-                List.of(StringEvaluationValue.class, QuestionScoresEvaluationValue.class,  NumberEvaluationValue.class, ListEvaluationValue.class, AttributeEvaluationValue.class));
+        interfacePlugin.interfaceImplements(EvaluationValue.class,
+                List.of(StringEvaluationValue.class,
+                        QuestionScoresEvaluationValue.class,
+                        ExpressionEvaluationValue.class,
+                        BooleanEvaluationValue.class,
+                        NullEvaluationValue.class,
+                        NumberEvaluationValue.class,
+                        ListEvaluationValue.class,
+                        AttributeEvaluationValue.class));
+        interfacePlugin.interfaceImplements(Primitive.class, List.of(FileSyncPrimitive.class));
     }
 
     private final static FixtureMonkey FIXTURE_MONKEY = FixtureMonkey.builder()
             .objectIntrospector(FieldReflectionArbitraryIntrospector.INSTANCE)
-            .defaultArbitraryContainerInfoGenerator(context -> new ArbitraryContainerInfo(1, 1))
             .nullableContainer(false)
             .defaultNotNull(true)
             .nullableElement(false)
             .plugin(interfacePlugin)
             .useExpressionStrictMode()
             .pushAssignableTypeArbitraryIntrospector(Record.class, ConstructorPropertiesArbitraryIntrospector.INSTANCE)
-            .pushAssignableTypeArbitraryIntrospector(Timestamp.class, ConstructorPropertiesArbitraryIntrospector.INSTANCE)
-            .pushAssignableTypeArbitraryIntrospector(URL.class, ConstructorPropertiesArbitraryIntrospector.INSTANCE)
             .build();
 
     @RepeatedTest(100)
@@ -149,6 +153,33 @@ class FixtureMonkeyTest {
         assertThat(workflowRecord).isNotNull();
     }
 
+    @RepeatedTest(100)
+    void failover() {
+        FixtureMonkey FIXTURE_MONKEY_FAILOVER = FixtureMonkey.builder()
+                .useExpressionStrictMode()
+                .objectIntrospector(new FailoverIntrospector(List.of(FieldReflectionArbitraryIntrospector.INSTANCE), true))
+                .pushAssignableTypeArbitraryIntrospector(Record.class, ConstructorPropertiesArbitraryIntrospector.INSTANCE)
+                .pushExactTypeArbitraryIntrospector(Object.class, context -> new ArbitraryIntrospectorResult(CombinableArbitrary.from("test")))
+                .defaultArbitraryContainerInfoGenerator(context -> new ArbitraryContainerInfo(1, 1))
+                .nullableContainer(false)
+                .defaultNotNull(true)
+                .nullableElement(false)
+                //.plugin(interfacePlugin)
+                .enableLoggingFail(true)
+                .build();
+
+        FileSyncDocument fileSyncDocument = FIXTURE_MONKEY_FAILOVER.giveMeOne(FileSyncDocument.class);
+
+        FileSyncPrimitive primitive = FIXTURE_MONKEY_FAILOVER.giveMeBuilder(FileSyncPrimitive.class)
+                .set("value", List.of(fileSyncDocument))
+                .sample();
+
+        HierarchyPrimitive hierarchyPrimitive = FIXTURE_MONKEY_FAILOVER.giveMeOne(HierarchyPrimitive.class);
+
+        assertThat(primitive.value()).isNotNull();
+        assertThat(hierarchyPrimitive.value()).isNotNull();
+    }
+
     @Test
     void locale() {
         URL locale = FIXTURE_MONKEY.giveMeOne(URL.class);
@@ -219,10 +250,12 @@ class FixtureMonkeyTest {
         assertThat(proto.event()).isNull();
     }
 
-    @RepeatedTest(100)
+    @RepeatedTest(500)
     void duplicateKey() {
-            EvaluationValue value = FIXTURE_MONKEY.giveMeBuilder(AttributeEvaluationValue.class)
-                .set("value", EvaluationValue.ofQuestion(BigDecimal.ONE))
+        var value = FIXTURE_MONKEY.giveMeBuilder(AttributeEvaluationValue.class)
+                .set("value", EvaluationValue.ofNumber(BigDecimal.ONE))
                 .sample();
+
+        assertThat(value).isNotNull();
     }
 }
