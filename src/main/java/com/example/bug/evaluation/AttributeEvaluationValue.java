@@ -1,4 +1,4 @@
-package com.example.bug;
+package com.example.bug.evaluation;
 
 import java.math.BigDecimal;
 import java.util.UUID;

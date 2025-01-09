@@ -1,4 +1,4 @@
-package com.example.bug;
+package com.example.bug.evaluation;
 
 import java.util.List;
 

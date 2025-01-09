@@ -1,6 +1,7 @@
-package com.example.bug;
+package com.example.bug.evaluation;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 public interface EvaluationValue {
@@ -14,6 +15,10 @@ public interface EvaluationValue {
 
     static EvaluationValue ofNumber(BigDecimal value) {
         return new NumberEvaluationValue(value);
+    }
+
+    static EvaluationValue ofList(List<EvaluationValue> values) {
+        return new ListEvaluationValue(values);
     }
 
     static EvaluationValue ofString(String value) {

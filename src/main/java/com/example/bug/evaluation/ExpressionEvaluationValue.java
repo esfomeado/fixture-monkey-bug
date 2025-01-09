@@ -1,4 +1,4 @@
-package com.example.bug;
+package com.example.bug.evaluation;
 
 public record ExpressionEvaluationValue(Object value) implements EvaluationValue {
     @Override

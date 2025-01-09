@@ -1,5 +1,9 @@
 package com.example.bug;
 
+import com.example.bug.evaluation.AttributeEvaluationValue;
+import com.example.bug.evaluation.EvaluationValue;
+import com.example.bug.evaluation.ListEvaluationValue;
+import com.example.bug.evaluation.StringEvaluationValue;
 import com.navercorp.fixturemonkey.FixtureMonkey;
 import com.navercorp.fixturemonkey.api.arbitrary.CombinableArbitrary;
 import com.navercorp.fixturemonkey.api.generator.ArbitraryContainerInfo;
@@ -8,11 +12,17 @@ import com.navercorp.fixturemonkey.api.introspector.ConstructorPropertiesArbitra
 import com.navercorp.fixturemonkey.api.introspector.FailoverIntrospector;
 import com.navercorp.fixturemonkey.api.introspector.FieldReflectionArbitraryIntrospector;
 import com.navercorp.fixturemonkey.api.plugin.InterfacePlugin;
+import com.navercorp.fixturemonkey.api.property.CandidateConcretePropertyResolver;
+import com.navercorp.fixturemonkey.api.property.InterfaceCandidateConcretePropertyResolver;
+import com.navercorp.fixturemonkey.api.property.Property;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
+import org.reflections.Reflections;
+import org.reflections.scanners.Scanners;
 import org.springframework.http.codec.multipart.FilePart;
 
+import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.Timestamp;
@@ -22,36 +32,40 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class FixtureMonkeyTest {
+    private static final String PACKAGE = "com.example.bug";
+    private static final Reflections REFLECTIONS = new Reflections(PACKAGE);
 
-    private final static InterfacePlugin interfacePlugin = new InterfacePlugin();
+    private static InterfacePlugin getInterfacePlugin() {
+        CandidateConcretePropertyResolver propertyResolver = property -> new InterfaceCandidateConcretePropertyResolver<>(getSubtypes(property)).resolve(property);
+        InterfacePlugin interfacePlugin = new InterfacePlugin();
+        interfacePlugin.interfaceImplements(FixtureMonkeyTest::isPropertyPackage, propertyResolver);
+        interfacePlugin.abstractClassExtends(FixtureMonkeyTest::isPropertyPackage, propertyResolver);
+        return interfacePlugin;
+    }
 
-    static {
-        interfacePlugin.interfaceImplements(Book.class, List.of(FantasyBook.class));
-        interfacePlugin.abstractClassExtends(EntityAttribute.class, List.of(NumberEntityAttribute.class));
-        interfacePlugin.abstractClassExtends(Condition.class, List.of(ValueCondition.class, ListValueCondition.class));
-        interfacePlugin.abstractClassExtends(Letter.class, List.of(A.class, B.class));
-        interfacePlugin.abstractClassExtends(Value.class, List.of(StringValue.class, ListValue.class));
-        interfacePlugin.interfaceImplements(EvaluationValue.class,
-                List.of(StringEvaluationValue.class,
-                        QuestionScoresEvaluationValue.class,
-                        ExpressionEvaluationValue.class,
-                        BooleanEvaluationValue.class,
-                        NullEvaluationValue.class,
-                        NumberEvaluationValue.class,
-                        ListEvaluationValue.class,
-                        AttributeEvaluationValue.class));
-        interfacePlugin.interfaceImplements(Primitive.class, List.of(FileSyncPrimitive.class));
+    private static boolean isPropertyPackage(Property property) {
+        return property.getType().getTypeName().startsWith(PACKAGE);
+    }
+
+    private static List<Class<?>> getSubtypes(Property property) {
+        return REFLECTIONS.get(Scanners.SubTypes.of(property.getType().getTypeName()).asClass())
+                .stream()
+                .filter(c -> !Modifier.isAbstract(c.getModifiers()))
+                .filter(c -> !Modifier.isStatic(c.getModifiers()))
+                .toList();
     }
 
     private final static FixtureMonkey FIXTURE_MONKEY = FixtureMonkey.builder()
-            .objectIntrospector(FieldReflectionArbitraryIntrospector.INSTANCE)
+            .pushAssignableTypeArbitraryIntrospector(Record.class, ConstructorPropertiesArbitraryIntrospector.INSTANCE)
+            .objectIntrospector(new FailoverIntrospector(
+                    List.of(FieldReflectionArbitraryIntrospector.INSTANCE)
+            ))
             .nullableContainer(false)
             .defaultNotNull(true)
             .nullableElement(false)
-            .plugin(interfacePlugin)
+            .plugin(getInterfacePlugin())
             .defaultArbitraryContainerInfoGenerator(context -> new ArbitraryContainerInfo(1, 1))
             .useExpressionStrictMode()
-            .pushAssignableTypeArbitraryIntrospector(Record.class, ConstructorPropertiesArbitraryIntrospector.INSTANCE)
             .build();
 
     @RepeatedTest(100)
@@ -165,7 +179,7 @@ class FixtureMonkeyTest {
                 .nullableContainer(false)
                 .defaultNotNull(true)
                 .nullableElement(false)
-                //.plugin(interfacePlugin)
+                .plugin(getInterfacePlugin())
                 .enableLoggingFail(true)
                 .build();
 
@@ -222,7 +236,7 @@ class FixtureMonkeyTest {
                 .nullableContainer(false)
                 .defaultNotNull(true)
                 .nullableElement(false)
-                .plugin(interfacePlugin)
+                .plugin(getInterfacePlugin())
                 .pushAssignableTypeArbitraryIntrospector(Value.class, ConstructorPropertiesArbitraryIntrospector.INSTANCE)
                 .build();
 
