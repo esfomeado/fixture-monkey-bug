@@ -13,7 +13,7 @@ import com.navercorp.fixturemonkey.api.introspector.FailoverIntrospector;
 import com.navercorp.fixturemonkey.api.introspector.FieldReflectionArbitraryIntrospector;
 import com.navercorp.fixturemonkey.api.plugin.InterfacePlugin;
 import com.navercorp.fixturemonkey.api.property.CandidateConcretePropertyResolver;
-import com.navercorp.fixturemonkey.api.property.InterfaceCandidateConcretePropertyResolver;
+import com.navercorp.fixturemonkey.api.property.ConcreteTypeCandidateConcretePropertyResolver;
 import com.navercorp.fixturemonkey.api.property.Property;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.RepeatedTest;
@@ -36,7 +36,7 @@ class FixtureMonkeyTest {
     private static final Reflections REFLECTIONS = new Reflections(PACKAGE);
 
     private static InterfacePlugin getInterfacePlugin() {
-        CandidateConcretePropertyResolver propertyResolver = property -> new InterfaceCandidateConcretePropertyResolver<>(getSubtypes(property)).resolve(property);
+        CandidateConcretePropertyResolver propertyResolver = property -> new ConcreteTypeCandidateConcretePropertyResolver<>(getSubtypes(property)).resolve(property);
         InterfacePlugin interfacePlugin = new InterfacePlugin();
         interfacePlugin.interfaceImplements(FixtureMonkeyTest::isPropertyPackage, propertyResolver);
         interfacePlugin.abstractClassExtends(FixtureMonkeyTest::isPropertyPackage, propertyResolver);
@@ -172,7 +172,11 @@ class FixtureMonkeyTest {
     void failover() {
         FixtureMonkey FIXTURE_MONKEY_FAILOVER = FixtureMonkey.builder()
                 .useExpressionStrictMode()
-                .objectIntrospector(new FailoverIntrospector(List.of(FieldReflectionArbitraryIntrospector.INSTANCE), true))
+                .objectIntrospector(
+                        new FailoverIntrospector(
+                                List.of(
+                                        FieldReflectionArbitraryIntrospector.INSTANCE
+                                ), true))
                 .pushAssignableTypeArbitraryIntrospector(Record.class, ConstructorPropertiesArbitraryIntrospector.INSTANCE)
                 .pushExactTypeArbitraryIntrospector(Object.class, context -> new ArbitraryIntrospectorResult(CombinableArbitrary.from("test")))
                 .defaultArbitraryContainerInfoGenerator(context -> new ArbitraryContainerInfo(1, 1))
